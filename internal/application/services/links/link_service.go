@@ -23,7 +23,7 @@ func NewLinkService(repo repositories.ILinksRepo) *LinkService {
 func (service *LinkService) AddNewLink(data LinkData) (*LinkAddResult, int) {
 	var candidate string = utilities.RandomCode(service.urlLen)
 
-	for ; service.repo.CheckExsist(candidate); {
+	for service.repo.CheckExsist(candidate) {
 		candidate = utilities.RandomCode(service.urlLen)
 	}
 	service.repo.TryAddItem(data.Url, candidate)

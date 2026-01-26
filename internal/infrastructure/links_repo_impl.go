@@ -13,10 +13,6 @@ func NewLinksInMemoryRepo() *LinksInMemoryRepo {
 }
 
 func (repo *LinksInMemoryRepo) CheckExsist(shrortLink string) bool {
-	repo.mux.Lock()
-
-	defer repo.mux.Unlock()
-
 	if _, ok := repo.data[shrortLink]; !ok {
 		return false
 	} else {

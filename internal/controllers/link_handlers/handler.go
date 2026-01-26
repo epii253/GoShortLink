@@ -36,12 +36,12 @@ func (handler *LinkHandler) PostLink(ctx *gin.Context) {
 }
 
 func (handler *LinkHandler) GetLink(ctx *gin.Context) {
-	var shortLink links.ShortLinkData
-
-	if err := ctx.ShouldBindJSON(&shortLink); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	link := ctx.Param("shortUrl")
+	if len(link) == 0 {
+		ctx.JSON(http.StatusBadRequest, nil)
 	}
+
+	shortLink := links.ShortLinkData{ShortLink: link}
 
 	result, status := handler.linkService.ExtractFullLink(shortLink)
 
