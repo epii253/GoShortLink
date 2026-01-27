@@ -27,7 +27,7 @@ func (service *LinkService) AddNewLink(data LinkData) (*LinkAddResult, int) {
 		candidate = utilities.RandomCode(service.urlLen)
 	}
 	service.repo.TryAddItem(data.Url, candidate)
-
+	
 	result := &LinkAddResult{ShortedUrl: candidate}
 
 	return result, http.StatusCreated
