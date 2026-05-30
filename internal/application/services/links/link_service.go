@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"project/internal/application/repositories"
 	"project/internal/application/services/utilities"
+	contracts "project/internal/application/contracts"
 )
 
 type ILinkService interface {
-	AddNewLink(data LinkData) (*LinkAddResult, int)
-	ExtractFullLink(data ShortLinkData) (*LinkExtractResult, int)
+	AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int)
+	ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int)
 }
 
 type LinkService struct {
@@ -20,7 +21,7 @@ func NewLinkService(repo repositories.ILinksRepo) *LinkService {
 	return &LinkService{repo: repo, urlLen: 7}
 }
 
-func (service *LinkService) AddNewLink(data LinkData) (*LinkAddResult, int) {
+func (service *LinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int) {
 	var candidate string = utilities.RandomCode(service.urlLen)
 
 	for service.repo.CheckExsist(candidate) {
@@ -28,16 +29,16 @@ func (service *LinkService) AddNewLink(data LinkData) (*LinkAddResult, int) {
 	}
 	service.repo.TryAddItem(data.Url, candidate)
 	
-	result := &LinkAddResult{ShortedUrl: candidate}
+	result := &contracts.LinkAddResult{ShortedUrl: candidate}
 
 	return result, http.StatusCreated
 }
 
-func (service *LinkService) ExtractFullLink(data ShortLinkData) (*LinkExtractResult, int) {
+func (service *LinkService) ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int) {
 	fullUrl, ok := service.repo.GetByLink(data.ShortLink)
 
 	if !ok {
 		return nil, http.StatusNotFound
 	}
-	return &LinkExtractResult{FullUrl: *fullUrl}, http.StatusFound
+	return &contracts.LinkExtractResult{FullUrl: *fullUrl}, http.StatusFound
 }

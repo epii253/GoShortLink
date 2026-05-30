@@ -1,4 +1,3 @@
-*.mod
-*.sum
-*.env
+.env
 .vscode/
+app

@@ -1,24 +1,23 @@
 package main
 
 import (
-	"project/internal/application/services/links"
-	linkhandlers "project/internal/controllers/link_handlers"
-	"project/internal/infrastructure"
+	"log"
+	"project/internal/di"
 	"project/internal/settings"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-// TODO Wire DI
 func main() {
-	conf := settings.NewConfig("../../.env")
+	conf := settings.NewConfig(".env")
+
+	linkHandler, err := di.InitializeHandler()
+	if err != nil {
+		log.Fatalf("failed to initialize dependencies: %v", err)
+	}
 
 	router := gin.Default()
-
-	linkRepo := infrastructure.NewLinksInMemoryRepo()
-	linkService := links.NewLinkService(linkRepo)
-	linkHandler := linkhandlers.NewLinkHandler(linkService)
 
 	router.POST("/link", linkHandler.PostLink)
 	router.GET("/link/:shortUrl", linkHandler.GetLink)

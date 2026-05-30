@@ -2,6 +2,7 @@ package linkhandlers
 
 import (
 	"net/http"
+	contracts "project/internal/application/contracts"
 	"project/internal/application/services/links"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ func NewLinkHandler(linkService links.ILinkService) *LinkHandler {
 }
 
 func (handler *LinkHandler) PostLink(ctx *gin.Context) {
-	var newLink links.LinkData
+	var newLink contracts.LinkData
 
 	if err := ctx.ShouldBindJSON(&newLink); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -41,7 +42,7 @@ func (handler *LinkHandler) GetLink(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, nil)
 	}
 
-	shortLink := links.ShortLinkData{ShortLink: link}
+	shortLink := contracts.ShortLinkData{ShortLink: link}
 
 	result, status := handler.linkService.ExtractFullLink(shortLink)
 

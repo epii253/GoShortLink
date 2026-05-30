@@ -2,6 +2,7 @@ package settings
 
 import (
 	"log"
+	"errors"
 	"os"
 	"strconv"
 	"sync"
@@ -11,16 +12,29 @@ import (
 
 var once sync.Once
 
-func LoadWithFallBack(path string) {
-	once.Do(func() {
-		if err := godotenv.Load(path); err != nil {
+func LoadWithFallBack(path string) error {
+	var err error
 
-			// fallback
-			if err := godotenv.Load(path + ".example"); err != nil {
-				log.Println("no env files found, relying on system env")
-			}
+	once.Do(func() {
+		if _, statErr := os.Stat(path); statErr == nil {
+			err = godotenv.Load(path)
+			return 
 		}
+
+		fallbackPath := path + ".example"
+
+		if _, statErr := os.Stat(fallbackPath); statErr == nil {
+			err = godotenv.Load(fallbackPath)
+			return 
+		}
+
+		log.Println("no env files found; using system environment variables")
+
+
+		err = errors.New("no env files found; using system environment variables")
 	})
+
+	return err
 }
 
 type Config struct {
@@ -30,7 +44,7 @@ type Config struct {
 
 func NewConfig(path string) *Config {
 	LoadWithFallBack(path)
-	
+
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	return &Config{Host: os.Getenv("HOST"), Port: port}
 }
