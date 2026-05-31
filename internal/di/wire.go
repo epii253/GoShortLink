@@ -16,7 +16,9 @@ import (
 var RepoSet = wire.NewSet(
 	infrastructure.NewPsqlDB,
 	infrastructure.NewLinksDbRepo,
-	wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.LinksDbRepo)),
+	infrastructure.NewRedisConnection,
+	infrastructure.NewCachedRepo,
+	wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.CachedRepo)),
 )
 
 var ServiceSet = wire.NewSet(

@@ -1,11 +1,12 @@
 package settings
 
 import (
-	"log"
 	"errors"
+	"log"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	godotenv "github.com/joho/godotenv"
 )
@@ -46,6 +47,10 @@ type Config struct {
 	DBUser string
 	DBPass string
 	DBName string
+
+	RedisAddr    string
+	RedisPass    string
+	CacheTTL     time.Duration
 }
 
 func NewConfig(path string) *Config {
@@ -57,6 +62,15 @@ func NewConfig(path string) *Config {
 	return &Config{
 		Host: os.Getenv("HOST"),
 		Port: port,
+
+		RedisAddr: os.Getenv("REDIS_ADDR"),
+		RedisPass: os.Getenv("REDIS_PASSWORD"),
+		CacheTTL: func() time.Duration {
+			if d, err := time.ParseDuration(os.Getenv("CACHE_TTL")); err == nil {
+				return d
+			}
+			return 2 * time.Minute
+		}(),
 
 		DBHost: os.Getenv("DB_HOST"),
 		DBPort: dbPort,

@@ -14,6 +14,12 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    networks:
+      - internal
+    restart: unless-stopped
+
   app:
     build: .
     ports:
@@ -23,6 +29,7 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
+      REDIS_ADDR: "redis:6379"
 
     networks:
       - internal
@@ -30,6 +37,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
 
 networks:

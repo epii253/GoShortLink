@@ -23,14 +23,19 @@ func InitializeHandler(config *settings.Config) (*linkhandlers.LinkHandler, erro
 		return nil, err
 	}
 	linksDbRepo := infrastructure.NewLinksDbRepo(db)
-	linkService := links.NewLinkService(linksDbRepo)
+	client, err := infrastructure.NewRedisConnection(config)
+	if err != nil {
+		return nil, err
+	}
+	cachedRepo := infrastructure.NewCachedRepo(linksDbRepo, client, config)
+	linkService := links.NewLinkService(cachedRepo)
 	linkHandler := linkhandlers.NewLinkHandler(linkService)
 	return linkHandler, nil
 }
 
 // wire.go:
 
-var RepoSet = wire.NewSet(infrastructure.NewPsqlDB, infrastructure.NewLinksDbRepo, wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.LinksDbRepo)))
+var RepoSet = wire.NewSet(infrastructure.NewPsqlDB, infrastructure.NewLinksDbRepo, infrastructure.NewRedisConnection, infrastructure.NewCachedRepo, wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.CachedRepo)))
 
 var ServiceSet = wire.NewSet(links.NewLinkService, wire.Bind(new(links.ILinkService), new(*links.LinkService)))
 
