@@ -6,22 +6,28 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	"project/internal/application/repositories"
 	"project/internal/domain"
 	settings "project/internal/settings"
 )
 
 type CachedRepo struct {
-	mainDb     *LinksDbRepo
+	mainDb     repositories.ILinksRepo
 	redisCache *redis.Client
 	ttl        time.Duration
 }
 
 func NewCachedRepo(mainDb *LinksDbRepo, redisCache *redis.Client, cnf *settings.Config) *CachedRepo {
-	return &CachedRepo{
-		mainDb:     mainDb,
-		redisCache: redisCache,
-		ttl:        cnf.CacheTTL,
-	}
+	return newCachedRepo(mainDb, redisCache, cnf.CacheTTL)
+}
+
+// NewCachedRepoWith accepts ILinksRepo so tests can inject mocks.
+func NewCachedRepoWith(mainDb repositories.ILinksRepo, redisCache *redis.Client, ttl time.Duration) *CachedRepo {
+	return newCachedRepo(mainDb, redisCache, ttl)
+}
+
+func newCachedRepo(mainDb repositories.ILinksRepo, redisCache *redis.Client, ttl time.Duration) *CachedRepo {
+	return &CachedRepo{mainDb: mainDb, redisCache: redisCache, ttl: ttl}
 }
 
 func (repo *CachedRepo) GetByLink(shortLink string) (*domain.Link, error) {
