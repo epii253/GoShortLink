@@ -1,67 +1,98 @@
-# GoShortLink - микросервис для сокращённых ссылок
+# GoScanner - сервис сокращения ссылок
 
-ShortLink - минималистичный микросервис на Go для создания и резолва сокращённых ссылок.
-Проект находится на ранней стадии, но уже содержит архитектурный каркас (handlers → services → repositories)
-и готов к расширению.
+Минималистичный сервис на Go для создания и резолва коротких ссылок.
+Построен на чистой слоистой архитектуре: handlers, services, repositories.
 
----
+## Стек
+
+- **Go** + **Gin** — HTTP сервер
+- **GORM** + **PostgreSQL** — хранение данных, автомиграции при старте
+- **google/wire** — компайл-тайм dependency injection
+- **Docker / docker-compose** — контейнеризация и оркестрация
 
 ## Структура проекта
 
 ```
 .
-├── cmd/
-│   └── app/
-│       └── main.go                 # Точка входа, wiring зависимостей
-├── go.mod
-└── internal/
-    ├── application/
-    │   ├── repositories/
-    │   │   └── links_repo.go       # Интерфейс репозитория
-    │   └── services/
-    │       └── links/
-    │           ├── link_service.go # Бизнес-логика
-    │           └── links_models.go # Модели / DTO
-    ├── controllers/
-    │   └── link_handlers/
-    │       └── handler.go          # HTTP handlers (Gin)
-    ├── infrastructure/
-    │   └── links_repo_impl.go      # In-memory реализация репозитория
-    └── settings/
-        └── config.go               # Загрузка конфигурации (.env, fallback)
+├── cmd/app/
+│   └── main.go                              # Точка входа
+├── internal/
+│   ├── application/
+│   │   ├── contracts/
+│   │   │   └── links_models.go              # DTO (запросы и ответы)
+│   │   ├── repositories/
+│   │   │   └── links_repo.go                # Интерфейс репозитория
+│   │   └── services/
+│   │       ├── links/
+│   │       │   └── link_service.go          # Бизнес-логика
+│   │       └── utilities/
+│   │           └── url_convertor.go         # Генерация короткого кода
+│   ├── controllers/
+│   │   └── link_handlers/
+│   │       └── handler.go                   # HTTP обработчики
+│   ├── di/
+│   │   ├── wire.go                          # Описание зависимостей (wire)
+│   │   └── wire_gen.go                      # Сгенерированный DI код
+│   ├── domain/
+│   │   └── link_model.go                    # Доменная модель Link
+│   ├── infrastructure/
+│   │   ├── db_connection.go                 # Подключение к PostgreSQL, AutoMigrate
+│   │   ├── links_repo_db.go                 # Реализация репозитория через GORM
+│   │   └── links_repo_memory.go             # In-memory реализация (для разработки)
+│   └── settings/
+│       └── config.go                        # Загрузка конфигурации из .env
+├── Dockerfile
+├── docker-compose.yml
+└── .env.example
 ```
-
----
-
-## Возможности
-
-- Создание короткой ссылки по длинному URL
-- Редирект по короткому коду
-- Чистое разделение ответственности (handlers / services / repositories)
-- Dependency Injection через конструкторы
-- Потокобезопасная работа (stateless services)
-
----
 
 ## Быстрый старт
 
-### 1. Запуск
+### Через Docker (рекомендуется)
+
+Скопируй файл с переменными окружения и заполни значения:
+
+```bash
+cp .env.example .env
+```
+
+Запусти сервис вместе с базой данных:
+
+```bash
+docker compose up --build
+```
+
+При старте приложение автоматически создаст таблицы в базе данных.
+
+### Локально
+
+Для локального запуска нужен запущенный PostgreSQL. Заполни `.env` и запусти:
 
 ```bash
 go run ./cmd/app
 ```
 
-По умолчанию сервер запускается на порту **8080**.
+## Конфигурация
 
----
+Все параметры задаются через `.env` файл. Пример значений смотри в `.env.example`.
+
+| Переменная          | Описание                        | По умолчанию  |
+|---------------------|---------------------------------|---------------|
+| HOST                | Адрес сервера                   | 0.0.0.0       |
+| PORT                | Порт сервера                    | 8080          |
+| DB_HOST             | Хост базы данных                | localhost     |
+| DB_PORT             | Порт базы данных                | 5432          |
+| POSTGRES_USER       | Пользователь БД                 |               |
+| POSTGRES_PASSWORD   | Пароль БД                       |               |
+| POSTGRES_DB         | Имя базы данных                 |               |
 
 ## HTTP API
 
-### POST `/link`
+### POST /link
 
-Создание короткой ссылки.
+Создать короткую ссылку.
 
-**Тело запроса:**
+Тело запроса:
 
 ```json
 {
@@ -69,69 +100,43 @@ go run ./cmd/app
 }
 ```
 
-**Пример:**
+Пример вызова:
 
 ```bash
-curl -X POST http://localhost:8080/link   -H "Content-Type: application/json"   -d '{"full_url":"https://example.com/very/long/path"}'
+curl -X POST http://localhost:8080/link \
+  -H "Content-Type: application/json" \
+  -d '{"full_url":"https://example.com/very/long/path"}'
 ```
 
-**Ответ (пример):**
+Ответ (201 Created):
 
 ```json
 {
-  "short_url": "Ab3XyZ",
-  "full_url": "https://example.com/very/long/path"
+  "url": "Ab3XyZ7"
 }
 ```
 
----
+### GET /link/:shortUrl
 
-### GET `/link/:shortUrl`
-
-Редирект по короткому коду.
+Редирект на оригинальный URL по короткому коду.
 
 ```bash
-curl -v http://localhost:8080/link/Ab3XyZ
+curl -v http://localhost:8080/link/Ab3XyZ7
 ```
 
-Ожидаемый результат:
-- `302 Found`
-- заголовок `Location` с оригинальным URL
+Возвращает `302 Found` с заголовком `Location`.
 
----
+## Разработка
 
-## Конфигурация
+После изменений в `internal/di/wire.go` нужно перегенерировать DI код:
 
-Конфигурация загружается при старте приложения:
-- `.env`
-- fallback: `.env.example`
+```bash
+wire ./internal/di
+```
 
-Загрузка выполняется **один раз** (`sync.Once`).
+## Планы
 
----
-
-## Текущие ограничения
-
-- Используется **in-memory репозиторий** (данные теряются при перезапуске)
-- Отсутствуют тесты
-- Нет сбора статистики и аналитики
-
----
-
-## Точки роста
-
-- Добавить unit и integration тесты
-- Добавить сбор статистики переходов
-- Добавить поддержку PostgreSQL (вместо in-memory)
-- Кеширование (Redis)
-- Rate limiting и базовая защита от abuse
-
----
-
-## Идеи для развития
-
+- Тесты (unit и integration)
+- Статистика переходов
 - TTL для ссылок
-- Статистика по IP / User-Agent
-- Асинхронная обработка событий (channels / worker pool)
-- Docker / docker-compose
-- Health-check endpoints
+- Rate limiting
