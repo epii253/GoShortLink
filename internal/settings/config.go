@@ -40,11 +40,28 @@ func LoadWithFallBack(path string) error {
 type Config struct {
 	Host string
 	Port int
+
+	DBHost string
+	DBPort int
+	DBUser string
+	DBPass string
+	DBName string
 }
 
 func NewConfig(path string) *Config {
 	LoadWithFallBack(path)
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	return &Config{Host: os.Getenv("HOST"), Port: port}
+
+	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
+	return &Config{
+		Host: os.Getenv("HOST"),
+		Port: port,
+
+		DBHost: os.Getenv("DB_HOST"),
+		DBPort: dbPort,
+		DBUser: os.Getenv("POSTGRES_USER"),
+		DBPass: os.Getenv("POSTGRES_PASSWORD"),
+		DBName: os.Getenv("POSTGRES_DB"),
+	}
 }

@@ -1,10 +1,15 @@
 package repositories
 
+import (
+	domain "project/internal/domain"
+)
+
 type ILinksRepo interface {
-	CheckExsist(shrortLink string) bool
+	CheckExsist(shrortLink string) (bool, error)
 
-	TryAddItem(fullLink string, shrortLink string) bool
-	DeleteItem(shrortLink string)
+	TryAddItem(newItem *domain.Link) (bool, error)
 
-	GetByLink(shortLink string) (*string, bool)
+	DeleteItemByShortLink(shrortLink string) (bool, error)
+
+	GetByLink(shortLink string) (*domain.Link, error)
 }

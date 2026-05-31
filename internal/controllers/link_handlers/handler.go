@@ -28,10 +28,10 @@ func (handler *LinkHandler) PostLink(ctx *gin.Context) {
 	result, status := handler.linkService.AddNewLink(newLink)
 
 	switch status / 100 {
-	case 4:
+	case 2:
 		ctx.JSON(status, result)
 	default:
-		ctx.JSON(http.StatusCreated, result)
+		ctx.JSON(status, gin.H{"error": http.StatusText(status)})
 	}
 
 }
@@ -40,6 +40,7 @@ func (handler *LinkHandler) GetLink(ctx *gin.Context) {
 	link := ctx.Param("shortUrl")
 	if len(link) == 0 {
 		ctx.JSON(http.StatusBadRequest, nil)
+		return
 	}
 
 	shortLink := contracts.ShortLinkData{ShortLink: link}
@@ -47,10 +48,10 @@ func (handler *LinkHandler) GetLink(ctx *gin.Context) {
 	result, status := handler.linkService.ExtractFullLink(shortLink)
 
 	switch status / 100 {
-	case 4:
-		ctx.JSON(status, nil)
-	default:
+	case 3:
 		ctx.Redirect(status, result.FullUrl)
+	default:
+		ctx.JSON(status, gin.H{"error": http.StatusText(status)})
 	}
 
 }

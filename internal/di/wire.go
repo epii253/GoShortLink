@@ -8,12 +8,15 @@ import (
 	linkhandlers "project/internal/controllers/link_handlers"
 	"project/internal/infrastructure"
 
+	settings "project/internal/settings"
+
 	"github.com/google/wire"
 )
 
 var RepoSet = wire.NewSet(
-	infrastructure.NewLinksInMemoryRepo,
-	wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.LinksInMemoryRepo)),
+	infrastructure.NewPsqlDB,
+	infrastructure.NewLinksDbRepo,
+	wire.Bind(new(repositories.ILinksRepo), new(*infrastructure.LinksDbRepo)),
 )
 
 var ServiceSet = wire.NewSet(
@@ -25,11 +28,11 @@ var HandlerSet = wire.NewSet(
 	linkhandlers.NewLinkHandler,
 )
 
-func InitializeHandler() (*linkhandlers.LinkHandler, error) {
+func InitializeHandler(config *settings.Config) (*linkhandlers.LinkHandler, error) {
 	wire.Build(
 		RepoSet,
 		ServiceSet,
-		HandlerSet
+		HandlerSet,
 	)
 	
 	return nil, nil

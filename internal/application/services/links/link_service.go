@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"project/internal/application/repositories"
 	"project/internal/application/services/utilities"
+
+	domain "project/internal/domain"
 	contracts "project/internal/application/contracts"
 )
 
@@ -22,23 +24,45 @@ func NewLinkService(repo repositories.ILinksRepo) *LinkService {
 }
 
 func (service *LinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int) {
-	var candidate string = utilities.RandomCode(service.urlLen)
+	var candidateCode string = utilities.RandomCode(service.urlLen)
 
-	for service.repo.CheckExsist(candidate) {
-		candidate = utilities.RandomCode(service.urlLen)
+	for range 10 {
+		exsist, _ := service.repo.CheckExsist(candidateCode)
+
+		if exsist == false {
+			break
+		}
+
+		candidateCode = utilities.RandomCode(service.urlLen)
 	}
-	service.repo.TryAddItem(data.Url, candidate)
+
+	candidateLink, _ := domain.NewLink(candidateCode, data.Url)
+
+	isAdded, err := service.repo.TryAddItem(candidateLink)
 	
-	result := &contracts.LinkAddResult{ShortedUrl: candidate}
+	if err != nil {
+		return nil, http.StatusInternalServerError
+	}
+
+	if !isAdded {
+		return nil, http.StatusConflict
+	}
+
+	result := &contracts.LinkAddResult{ShortedUrl: candidateLink.ShortCode}
 
 	return result, http.StatusCreated
 }
 
 func (service *LinkService) ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int) {
-	fullUrl, ok := service.repo.GetByLink(data.ShortLink)
+	link, err := service.repo.GetByLink(data.ShortLink)
 
-	if !ok {
+	if err != nil {
+		return nil, http.StatusInternalServerError
+	}
+
+	if link == nil {
 		return nil, http.StatusNotFound
 	}
-	return &contracts.LinkExtractResult{FullUrl: *fullUrl}, http.StatusFound
+	
+	return &contracts.LinkExtractResult{FullUrl: link.FullUrl}, http.StatusFound
 }

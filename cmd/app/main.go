@@ -12,7 +12,7 @@ import (
 func main() {
 	conf := settings.NewConfig(".env")
 
-	linkHandler, err := di.InitializeHandler()
+	linkHandler, err := di.InitializeHandler(conf)
 	if err != nil {
 		log.Fatalf("failed to initialize dependencies: %v", err)
 	}
