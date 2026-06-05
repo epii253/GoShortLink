@@ -10,18 +10,18 @@ type MockLinkService struct {
 	mock.Mock
 }
 
-func (m *MockLinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int) {
+func (m *MockLinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResponse, int) {
 	args := m.Called(data)
 	if args.Get(0) == nil {
 		return nil, args.Int(1)
 	}
-	return args.Get(0).(*contracts.LinkAddResult), args.Int(1)
+	return args.Get(0).(*contracts.LinkAddResponse), args.Int(1)
 }
 
-func (m *MockLinkService) ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int) {
+func (m *MockLinkService) ExtractFullLink(data contracts.ShortLinkRequest) (*contracts.LinkExtractResponse, int) {
 	args := m.Called(data)
 	if args.Get(0) == nil {
 		return nil, args.Int(1)
 	}
-	return args.Get(0).(*contracts.LinkExtractResult), args.Int(1)
+	return args.Get(0).(*contracts.LinkExtractResponse), args.Int(1)
 }

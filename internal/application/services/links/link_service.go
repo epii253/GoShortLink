@@ -10,8 +10,11 @@ import (
 )
 
 type ILinkService interface {
-	AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int)
-	ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int)
+	AddNewLink(data contracts.LinkData) (*contracts.LinkAddResponse, int)
+	
+	ExtractFullLink(data contracts.ShortLinkRequest) (*contracts.LinkExtractResponse, int)
+
+	DeleteLinkByShort(data contracts.DeleteLinkRequest) (*contracts.DeleteLinkResponse, int)
 }
 
 type LinkService struct {
@@ -23,7 +26,7 @@ func NewLinkService(repo repositories.ILinksRepo) *LinkService {
 	return &LinkService{repo: repo, urlLen: 7}
 }
 
-func (service *LinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResult, int) {
+func (service *LinkService) AddNewLink(data contracts.LinkData) (*contracts.LinkAddResponse, int) {
 	var candidateCode string = utilities.RandomCode(service.urlLen)
 
 	for range 10 {
@@ -48,12 +51,12 @@ func (service *LinkService) AddNewLink(data contracts.LinkData) (*contracts.Link
 		return nil, http.StatusConflict
 	}
 
-	result := &contracts.LinkAddResult{ShortedUrl: candidateLink.ShortCode}
+	result := &contracts.LinkAddResponse{ShortedUrl: candidateLink.ShortCode}
 
 	return result, http.StatusCreated
 }
 
-func (service *LinkService) ExtractFullLink(data contracts.ShortLinkData) (*contracts.LinkExtractResult, int) {
+func (service *LinkService) ExtractFullLink(data contracts.ShortLinkRequest) (*contracts.LinkExtractResponse, int) {
 	link, err := service.repo.GetByLink(data.ShortLink)
 
 	if err != nil {
@@ -64,5 +67,15 @@ func (service *LinkService) ExtractFullLink(data contracts.ShortLinkData) (*cont
 		return nil, http.StatusNotFound
 	}
 	
-	return &contracts.LinkExtractResult{FullUrl: link.FullUrl}, http.StatusFound
+	return &contracts.LinkExtractResponse{FullUrl: link.FullUrl}, http.StatusFound
+}
+
+func (service *LinkService) DeleteLinkByShort(data contracts.DeleteLinkRequest) (*contracts.DeleteLinkResponse, int) {
+	clicks, err := service.repo.DeleteItemByShortLink(data.ShortedUrl) 
+
+	if err != nil {
+		return nil, http.StatusInternalServerError
+	}
+
+	return &contracts.DeleteLinkResponse{TotalClicks: clicks}, http.StatusOK
 }

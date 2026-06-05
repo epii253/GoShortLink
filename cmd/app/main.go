@@ -21,6 +21,7 @@ func main() {
 
 	router.POST("/link", linkHandler.PostLink)
 	router.GET("/link/:shortUrl", linkHandler.GetLink)
+	router.DELETE("/link/deleteShort/:shortUrl", linkHandler.DeleteLinkByShort)
 
 	router.Run(conf.Host + ":" + strconv.Itoa(conf.Port))
 }

@@ -37,6 +37,8 @@ func (repo *CachedRepo) GetByLink(shortLink string) (*domain.Link, error) {
 	fullUrl, redisErr := repo.redisCache.Get(ctx, shortLink).Result()
 
 	if redisErr == nil { // cahce hit
+		repo.ClickCounterByShort(shortLink)
+
 		return &domain.Link{
 				FullUrl:   fullUrl,
 				ShortCode: shortLink,
@@ -48,7 +50,6 @@ func (repo *CachedRepo) GetByLink(shortLink string) (*domain.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	repo.redisCache.Set(ctx, shortLink, link.FullUrl, repo.ttl)
 
 	return link, nil
@@ -62,11 +63,23 @@ func (repo *CachedRepo) TryAddItem(newItem *domain.Link) (bool, error) {
 	return repo.mainDb.TryAddItem(newItem)
 }
 
-func (repo *CachedRepo) DeleteItemByShortLink(shrortLink string) (bool, error) {
+func (repo *CachedRepo) UpdateLink(Id uint, updatedLink *domain.Link) (bool, error) {
+	return repo.mainDb.UpdateLink(Id, updatedLink)
+}
+
+func (repo *CachedRepo) DeleteItemByShortLink(shrortLink string) (uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 
 	repo.redisCache.Del(ctx, shrortLink)
 
 	return repo.mainDb.DeleteItemByShortLink(shrortLink)
+}
+
+func (repo *CachedRepo) ClickCounterUp(Id uint) (*domain.Link, error) {
+	return repo.mainDb.ClickCounterUp(Id)
+}
+
+func (repo *CachedRepo) ClickCounterByShort(shortCode string) (*domain.Link, error) {
+	return repo.mainDb.ClickCounterByShort(shortCode)
 }

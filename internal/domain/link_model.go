@@ -9,11 +9,14 @@ type Link struct {
 
 	ShortCode string `gorm:"uniqueIndex;not null"`
 	FullUrl string `gorm:"not null"`
+
+	Clicks uint64 `gorm:"not null"`
 }
 
 func NewLink(shortLink string, fullLink string) (*Link, error) {
 	return &Link{
 		ShortCode: shortLink,
 		FullUrl: fullLink,
+		Clicks: 0,
 	}, nil
 }
